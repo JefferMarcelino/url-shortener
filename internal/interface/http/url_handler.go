@@ -1,21 +1,21 @@
 package http
 
 import (
-	"os"
 	"urlshortener/internal/usecase"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-type Handler struct {
-	usecase *usecase.ShortenerUseCase
+type URLHandler struct {
+	usecase *usecase.URLUseCase
+	baseUrl string
 }
 
-func NewHandler(u *usecase.ShortenerUseCase) *Handler {
-	return &Handler{usecase: u}
+func NewURLHandler(u *usecase.URLUseCase, baseUrl string) *URLHandler {
+	return &URLHandler{usecase: u, baseUrl: baseUrl}
 }
 
-func (h *Handler) ShortenURL(c *fiber.Ctx) error {
+func (h *URLHandler) ShortenURL(c *fiber.Ctx) error {
 	var body struct {
 		URL string `json:"url"`
 	}
@@ -29,12 +29,10 @@ func (h *Handler) ShortenURL(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	baseUrl := os.Getenv("BASE_URL")
-
-	return c.JSON(fiber.Map{"short": baseUrl + code})
+	return c.JSON(fiber.Map{"short": h.baseUrl + code})
 }
 
-func (h *Handler) Redirect(c *fiber.Ctx) error {
+func (h *URLHandler) Redirect(c *fiber.Ctx) error {
 	code := c.Params("code")
 
 	url, err := h.usecase.Resolve(code)
