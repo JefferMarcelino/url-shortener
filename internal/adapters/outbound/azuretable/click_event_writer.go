@@ -3,6 +3,7 @@ package azuretable
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 	"urlshortener/internal/domain"
 
@@ -22,7 +23,7 @@ func NewClickEventWriter(client *aztables.ServiceClient, tableName string) domai
 func (r *ClickEventWriter) Save(a *domain.ClickEvent) error {
 	entity := map[string]any{
 		"PartitionKey": a.Code,
-		"RowKey":       time.Now().Unix(),
+		"RowKey":       fmt.Sprintf("%v", time.Now().Unix()),
 		"IP":           a.IP,
 		"UserAgent":    a.UserAgent,
 	}
