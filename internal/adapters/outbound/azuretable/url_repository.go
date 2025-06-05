@@ -1,11 +1,10 @@
-package repository
+package azuretable
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"urlshortener/internal/domain/model"
-	domainRepo "urlshortener/internal/domain/repository"
+	"urlshortener/internal/domain"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/data/aztables"
 )
@@ -15,7 +14,7 @@ type AzureURLRepo struct {
 	tableName string
 }
 
-func NewAzureURLRepository(client *aztables.ServiceClient, tableName string) domainRepo.URLRepository {
+func NewAzureURLRepository(client *aztables.ServiceClient, tableName string) domain.URLRepository {
 	tableClient := client.NewClient(tableName)
 
 	return &AzureURLRepo{
@@ -24,7 +23,7 @@ func NewAzureURLRepository(client *aztables.ServiceClient, tableName string) dom
 	}
 }
 
-func (r *AzureURLRepo) Save(url model.ShortURL) error {
+func (r *AzureURLRepo) Save(url domain.ShortURL) error {
 	entity := map[string]any{
 		"PartitionKey": r.tableName,
 		"RowKey":       url.Code,
@@ -41,7 +40,7 @@ func (r *AzureURLRepo) Save(url model.ShortURL) error {
 	return err
 }
 
-func (r *AzureURLRepo) GetByCode(code string) (*model.ShortURL, error) {
+func (r *AzureURLRepo) GetByCode(code string) (*domain.ShortURL, error) {
 	resp, err := r.client.GetEntity(context.TODO(), r.tableName, code, nil)
 	if err != nil {
 		return nil, err
@@ -50,7 +49,7 @@ func (r *AzureURLRepo) GetByCode(code string) (*model.ShortURL, error) {
 	var props map[string]any
 	_ = json.Unmarshal(resp.Value, &props)
 
-	return &model.ShortURL{
+	return &domain.ShortURL{
 		Code:    code,
 		LongURL: fmt.Sprintf("%v", props["LongURL"]),
 	}, nil

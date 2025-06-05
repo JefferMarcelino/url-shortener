@@ -2,11 +2,12 @@ package main
 
 import (
 	"log"
+	"urlshortener/internal/adapters/inbound/http/analytics"
+	urlHttp "urlshortener/internal/adapters/inbound/http/url"
+	"urlshortener/internal/adapters/outbound/azuretable"
+	"urlshortener/internal/application"
 	"urlshortener/internal/config"
-	"urlshortener/internal/infrastructure/azure"
-	"urlshortener/internal/infrastructure/repository"
-	"urlshortener/internal/interface/http"
-	"urlshortener/internal/usecase"
+	"urlshortener/internal/infrastructure"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,21 +20,20 @@ func main() {
 		ProxyHeader:             "X-Forwarded-For",
 	})
 
-	azTablesServiceClient := azure.NewAzureTablesServiceClient(cfg.AzureAccountName, cfg.AzureAccountKey)
+	azTablesServiceClient := infrastructure.NewAzureTablesServiceClient(cfg.AzureAccountName, cfg.AzureAccountKey)
 
-	urlRepo := repository.NewAzureURLRepository(azTablesServiceClient, cfg.AzureUrlsTableName)
-	analyticsRepo := repository.NewAzureAnalyticsRepository(azTablesServiceClient, cfg.AzureAnalyticsTableName)
+	urlRepo := azuretable.NewAzureURLRepository(azTablesServiceClient, cfg.AzureUrlsTableName)
+	clickEventReader := azuretable.NewClickEventReader(azTablesServiceClient, cfg.AzureAnalyticsTableName)
+	clickEventWriter := azuretable.NewClickEventWriter(azTablesServiceClient, cfg.AzureAnalyticsTableName)
 
-	urlUseCase := usecase.NewURLUseCase(urlRepo, analyticsRepo)
-	analyticsUseCase := usecase.NewAnalyticsUseCase(analyticsRepo)
+	urlUseCase := application.NewURLUseCase(urlRepo, clickEventWriter)
+	analyticsUseCase := application.NewAnalyticsUseCase(clickEventReader)
 
-	urlHandler := http.NewURLHandler(urlUseCase, cfg.BaseUrl)
-	analyticsHandler := http.NewAnalyticsHandler(analyticsUseCase)
+	urlHandler := urlHttp.NewURLHandler(urlUseCase, cfg.BaseUrl)
+	analyticsHandler := analytics.NewAnalyticsHandler(analyticsUseCase)
 
-	app.Get("/analytics/:code", analyticsHandler.GetAnalyticsByCode)
-
-	app.Post("/shorten", urlHandler.ShortenURL)
-	app.Get("/:code", urlHandler.Redirect)
+	urlHandler.RegisterURLRoutes(app)
+	analyticsHandler.RegisterAnalyticsRoutes(app)
 
 	log.Fatal(app.Listen(":" + cfg.Port))
 }

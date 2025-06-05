@@ -1,25 +1,23 @@
-package usecase
+package application
 
 import (
 	"math/rand"
-	"time"
-	"urlshortener/internal/domain/model"
-	"urlshortener/internal/domain/repository"
+	"urlshortener/internal/domain"
 )
 
 type URLUseCase struct {
-	urlRepo       repository.URLRepository
-	analyticsRepo repository.ClickAnalyticsRepository
+	urlRepo           domain.URLRepository
+	analyticsReporter domain.AnalyticsReporter
 }
 
-func NewURLUseCase(urlRepo repository.URLRepository, analyticsRepo repository.ClickAnalyticsRepository) *URLUseCase {
-	return &URLUseCase{urlRepo: urlRepo, analyticsRepo: analyticsRepo}
+func NewURLUseCase(urlRepo domain.URLRepository, analyticsReporter domain.AnalyticsReporter) *URLUseCase {
+	return &URLUseCase{urlRepo: urlRepo, analyticsReporter: analyticsReporter}
 }
 
 func (uc *URLUseCase) Shorten(url string) (string, error) {
 	code := generateCode(6)
 
-	newShortUrl := model.ShortURL{
+	newShortUrl := domain.ShortURL{
 		LongURL: url,
 		Code:    code,
 	}
@@ -35,14 +33,13 @@ func (uc *URLUseCase) Resolve(code, ip, userAgent string) (string, error) {
 		return "", err
 	}
 
-	analytics := &model.ClickAnalytics{
+	clickEvent := &domain.ClickEvent{
 		Code:      code,
-		Timestamp: time.Now().Unix(),
 		IP:        ip,
 		UserAgent: userAgent,
 	}
 
-	go uc.analyticsRepo.Save(analytics)
+	go uc.analyticsReporter.Save(clickEvent)
 
 	return url.LongURL, nil
 }

@@ -1,35 +1,43 @@
-package http
+package url
 
 import (
-	"urlshortener/internal/usecase"
+	"urlshortener/internal/application"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type URLHandler struct {
-	usecase *usecase.URLUseCase
+	usecase *application.URLUseCase
 	baseUrl string
 }
 
-func NewURLHandler(u *usecase.URLUseCase, baseUrl string) *URLHandler {
+func NewURLHandler(u *application.URLUseCase, baseUrl string) *URLHandler {
 	return &URLHandler{usecase: u, baseUrl: baseUrl}
 }
 
+func (h *URLHandler) RegisterURLRoutes(app *fiber.App) {
+	app.Post("/shorten", h.ShortenURL)
+	app.Get("/:code", h.Redirect)
+}
+
 func (h *URLHandler) ShortenURL(c *fiber.Ctx) error {
-	var body struct {
-		URL string `json:"url"`
-	}
+	var body ShortenRequest
 
 	if err := c.BodyParser(&body); err != nil {
 		return fiber.NewError(fiber.ErrBadRequest.Code, "invalid input")
 	}
 
-	code, err := h.usecase.Shorten(body.URL)
+	code, err := h.usecase.Shorten(body.OriginalURL)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(fiber.Map{"short": h.baseUrl + code})
+	return c.JSON(ShortenResponse{
+		ShortCode:    code,
+		OriginalURL:  body.OriginalURL,
+		ShortURL:     h.baseUrl + code,
+		AnalyticsURL: h.baseUrl + "analytics/" + code,
+	})
 }
 
 func (h *URLHandler) Redirect(c *fiber.Ctx) error {

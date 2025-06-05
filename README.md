@@ -9,7 +9,7 @@ This is a simple URL shortener API built in Go using Fiber web framework and Azu
 This project is part of my learning journey to:
 
 - Get hands-on with Go (Golang)
-- Practice Clean Architecture concepts (still a work in progress)
+- Practice Hexagonal Architecture
 - Use Fiber for lightweight HTTP routing
 - Integrate with Azure Table Storage
 - Learn to build backend services with cloud SDKs
