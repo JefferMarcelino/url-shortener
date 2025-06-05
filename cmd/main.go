@@ -14,7 +14,10 @@ import (
 func main() {
 	cfg := config.Load()
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		EnableTrustedProxyCheck: true,
+		ProxyHeader:             "X-Forwarded-For",
+	})
 
 	azTablesServiceClient := azure.NewAzureTablesServiceClient(cfg.AzureAccountName, cfg.AzureAccountKey)
 
