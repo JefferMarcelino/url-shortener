@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	AzureAccountName string
-	AzureAccountKey  string
-	AzureTableName   string
-	Port             string
-	BaseUrl          string
+	AzureAccountName        string
+	AzureAccountKey         string
+	AzureUrlsTableName      string
+	AzureAnalyticsTableName string
+	Port                    string
+	BaseUrl                 string
 }
 
 func Load() *Config {
@@ -23,10 +24,11 @@ func Load() *Config {
 	}
 
 	return &Config{
-		AzureAccountName: os.Getenv("AZURE_STORAGE_ACCOUNT_NAME"),
-		AzureAccountKey:  os.Getenv("AZURE_STORAGE_ACCOUNT_KEY"),
-		AzureTableName:   os.Getenv("AZURE_TABLE_NAME"),
-		Port:             os.Getenv("PORT"),
-		BaseUrl:          os.Getenv("BASE_URL"),
+		AzureAccountName:        os.Getenv("AZURE_STORAGE_ACCOUNT_NAME"),
+		AzureAccountKey:         os.Getenv("AZURE_STORAGE_ACCOUNT_KEY"),
+		AzureUrlsTableName:      os.Getenv("AZURE_URLS_TABLE_NAME"),
+		AzureAnalyticsTableName: os.Getenv("AZURE_ANALYTICS_TABLE_NAME"),
+		Port:                    os.Getenv("PORT"),
+		BaseUrl:                 os.Getenv("BASE_URL"),
 	}
 }

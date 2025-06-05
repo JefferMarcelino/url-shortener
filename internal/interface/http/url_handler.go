@@ -34,11 +34,14 @@ func (h *URLHandler) ShortenURL(c *fiber.Ctx) error {
 
 func (h *URLHandler) Redirect(c *fiber.Ctx) error {
 	code := c.Params("code")
+	ip := c.IP()
+	ua := c.Get("User-Agent")
 
-	url, err := h.usecase.Resolve(code)
+	url, err := h.usecase.Resolve(code, ip, ua)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "not found")
 	}
 
+	c.Set("Cache-Control", "no-store")
 	return c.Redirect(url, fiber.StatusFound)
 }

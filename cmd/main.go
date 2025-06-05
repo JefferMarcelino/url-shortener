@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"urlshortener/internal/config"
+	"urlshortener/internal/infrastructure/azure"
 	"urlshortener/internal/infrastructure/repository"
 	"urlshortener/internal/interface/http"
 	"urlshortener/internal/usecase"
@@ -15,9 +16,18 @@ func main() {
 
 	app := fiber.New()
 
-	urlRepo := repository.NewURLRepository(cfg.AzureAccountName, cfg.AzureAccountKey, cfg.AzureTableName)
-	urlUseCase := usecase.NewURLUseCase(urlRepo)
+	azTablesServiceClient := azure.NewAzureTablesServiceClient(cfg.AzureAccountName, cfg.AzureAccountKey)
+
+	urlRepo := repository.NewAzureURLRepository(azTablesServiceClient, cfg.AzureUrlsTableName)
+	analyticsRepo := repository.NewAzureAnalyticsRepository(azTablesServiceClient, cfg.AzureAnalyticsTableName)
+
+	urlUseCase := usecase.NewURLUseCase(urlRepo, analyticsRepo)
+	analyticsUseCase := usecase.NewAnalyticsUseCase(analyticsRepo)
+
 	urlHandler := http.NewURLHandler(urlUseCase, cfg.BaseUrl)
+	analyticsHandler := http.NewAnalyticsHandler(analyticsUseCase)
+
+	app.Get("/analytics/:code", analyticsHandler.GetAnalyticsByCode)
 
 	app.Post("/shorten", urlHandler.ShortenURL)
 	app.Get("/:code", urlHandler.Redirect)
